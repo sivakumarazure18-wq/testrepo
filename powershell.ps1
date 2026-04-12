@@ -1,6 +1,6 @@
 param(
     [string]$Repo1Url = "https://github.com/sivakumarazure18-wq/RAG_CHAT_APP.git",
-    [string]$Repo2Url = "https://github.com/sivakumarazure18-wq/RAG_CHAT_APP.git",
+    [string]$Repo2Url = "https://github.com/sivakumarazure18-wq/AI-rag-chat-evaluator-01.git",
     [string[]]$FilesToCopy = @("config.json", "credentials.template")
 )
 
