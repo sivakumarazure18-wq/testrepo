@@ -7,11 +7,12 @@ param(
 #Requires -RunAsAdministrator
 
 # ============================================================
-# PATHS (ALL ON DESKTOP)
+# PATHS (UPDATED TO C:\LabFiles)
 # ============================================================
 $Desktop   = "C:\Users\Public\Desktop"
-$Repo1Dest = Join-Path $Desktop "rag-chat-app"
-$Repo2Dest = Join-Path $Desktop "ai-evaluator-tool"
+$BasePath  = "C:\LabFiles"
+$Repo1Dest = Join-Path $BasePath "rag-chat-app"
+$Repo2Dest = Join-Path $BasePath "ai-evaluator-tool"
 $LogFile   = "C:\Windows\Temp\CSE_$(Get-Date -Format 'yyyyMMdd_HHmmss').log"
 
 # ============================================================
@@ -22,6 +23,16 @@ function Write-Log {
     $line = "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')][$Level] $Message"
     Write-Output $line
     Add-Content -Path $LogFile -Value $line -ErrorAction SilentlyContinue
+}
+
+# ============================================================
+# CREATE BASE DIRECTORY
+# ============================================================
+function Ensure-BaseFolder {
+    if (-not (Test-Path $BasePath)) {
+        Write-Log "Creating base folder: $BasePath"
+        New-Item -ItemType Directory -Path $BasePath -Force | Out-Null
+    }
 }
 
 # ============================================================
@@ -44,6 +55,21 @@ function Install-Git {
         Write-Log "Installing Git..."
         Install-Choco
         choco install git -y --no-progress
+    }
+}
+
+# ============================================================
+# INSTALL VS CODE
+# ============================================================
+function Install-VSCode {
+    $vsCodePath = "${env:ProgramFiles}\Microsoft VS Code\Code.exe"
+
+    if (-not (Test-Path $vsCodePath)) {
+        Write-Log "Installing Visual Studio Code..."
+        Install-Choco
+        choco install vscode -y --no-progress
+    } else {
+        Write-Log "VS Code already installed"
     }
 }
 
@@ -108,7 +134,31 @@ function Install-Edge {
 }
 
 # ============================================================
-# CREATE SHORTCUT (FIXED)
+# INSTALL PYTHON 3.10
+# ============================================================
+function Install-Python {
+    $pythonCmd = Get-Command python -ErrorAction SilentlyContinue
+
+    if (-not $pythonCmd) {
+        Write-Log "Installing Python 3.10..."
+        Install-Choco
+        choco install python --version=3.10.11 -y --no-progress
+    }
+    else {
+        $version = python --version 2>&1
+        if ($version -notmatch "3\.10") {
+            Write-Log "Different Python version detected ($version). Installing Python 3.10..."
+            Install-Choco
+            choco install python --version=3.10.11 -y --no-progress
+        }
+        else {
+            Write-Log "Python 3.10 already installed"
+        }
+    }
+}
+
+# ============================================================
+# CREATE SHORTCUT
 # ============================================================
 function Create-Shortcut {
     $shortcutPath = Join-Path $Desktop "Azure Portal.lnk"
@@ -148,7 +198,9 @@ function Create-Shortcut {
 try {
     Write-Log "===== START ====="
 
+    Ensure-BaseFolder
     Install-Git
+    Install-VSCode
 
     Clone-Repo $Repo1Url $Repo1Dest
     Clone-Repo $Repo2Url $Repo2Dest
@@ -164,4 +216,4 @@ try {
 }
 catch {
     Write-Log "ERROR: $_" "ERROR"
-}cd
+}
